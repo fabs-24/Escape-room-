@@ -1,0 +1,1097 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKY RUN - AGILE WORLD</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #87ceeb;
+    color: white;
+}
+
+canvas { display: block; }
+
+#hud {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.stat {
+    background: rgba(15,35,70,.8);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#worldName {
+    position: fixed;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,40,80,.75);
+    padding: 10px 18px;
+    border-radius: 20px;
+    z-index: 5;
+    text-align: center;
+    width: max-content;
+    max-width: 90%;
+}
+
+#menu, #quiz, #victory, #instructions {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(7,15,40,.78);
+    z-index: 10;
+    padding: 15px;
+}
+
+.panel {
+    background: linear-gradient(145deg,#172e65,#254f83);
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    border: 2px solid #8deaff;
+    border-radius: 22px;
+    text-align: center;
+    box-shadow: 0 0 35px #53d9ff66;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+h1 {
+    font-size: 42px;
+    color: #8cecff;
+    margin: 5px;
+}
+
+h2 { color: #9cecff; }
+
+button {
+    border: none;
+    padding: 13px 18px;
+    margin: 6px;
+    border-radius: 12px;
+    background: #20b9dc;
+    color: #092447;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover { background: #a2f2ff; }
+
+.answer {
+    display: block;
+    width: 100%;
+    margin: 9px 0;
+    background: #e7f5ff;
+    color: #17345a;
+    text-align: left;
+}
+
+.answer:disabled {
+    opacity: .65;
+    cursor: default;
+}
+
+#feedback {
+    min-height: 45px;
+    margin: 12px 0;
+    font-weight: bold;
+}
+
+#progress {
+    height: 10px;
+    background: #355078;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+#progressBar {
+    height: 100%;
+    width: 0%;
+    background: #45e6c2;
+    transition: width .3s;
+}
+
+#mobileControls {
+    position: fixed;
+    bottom: 16px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 15px;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.controlGroup {
+    display: flex;
+    gap: 7px;
+    pointer-events: auto;
+}
+
+.controlGroup button {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    font-size: 22px;
+    background: #174c80dd;
+    color: white;
+    border: 1px solid #9cecff;
+    touch-action: none;
+}
+
+.hidden { display: none !important; }
+
+.small {
+    font-size: 13px;
+    color: #d5edff;
+    line-height: 1.5;
+}
+</style>
+</head>
+
+<body>
+
+<div id="hud">
+    <div class="stat">⭐ Puntos: <span id="score">0</span></div>
+    <div class="stat">🪙 Monedas: <span id="coins">0</span></div>
+    <div class="stat">❤️ Vidas: <span id="lives">3</span></div>
+    <div class="stat">🏆 Mundos: <span id="worlds">0/6</span></div>
+</div>
+
+<div id="worldName">☁️ SKY RUN</div>
+
+<div id="menu">
+    <div class="panel">
+        <h1>☁️ SKY RUN</h1>
+        <h2>AGILE WORLD</h2>
+        <p>¡Bienvenido a una aventura por el mundo de la gestión de proyectos!</p>
+        <p class="small">
+            Explora islas flotantes, recoge monedas, salta obstáculos
+            y demuestra cuánto sabes sobre metodologías ágiles.
+        </p>
+        <button onclick="startGame()">▶ COMENZAR AVENTURA</button>
+        <button onclick="showInstructions()">🎮 CÓMO JUGAR</button>
+    </div>
+</div>
+
+<div id="instructions" class="hidden">
+    <div class="panel">
+        <h2>🎮 CONTROLES</h2>
+        <p>W / ↑ : Avanzar</p>
+        <p>S / ↓ : Retroceder</p>
+        <p>A / ← : Izquierda</p>
+        <p>D / → : Derecha</p>
+        <p>ESPACIO : Saltar</p>
+        <p>En celular: utiliza los botones de la pantalla.</p>
+        <p class="small">Llega a cada portal para responder las preguntas y desbloquear el siguiente mundo.</p>
+        <button onclick="hideInstructions()">VOLVER</button>
+    </div>
+</div>
+
+<div id="quiz" class="hidden">
+    <div class="panel">
+        <h2 id="quizWorld">RETO DEL MUNDO</h2>
+        <div id="progress">
+            <div id="progressBar"></div>
+        </div>
+        <p id="questionNumber"></p>
+        <h3 id="question"></h3>
+        <div id="answers"></div>
+        <div id="feedback"></div>
+        <button id="nextQuestion" class="hidden" onclick="nextQuiz()">CONTINUAR ➜</button>
+    </div>
+</div>
+
+<div id="victory" class="hidden">
+    <div class="panel">
+        <h1>🏆</h1>
+        <h2>¡MISIÓN COMPLETADA!</h2>
+        <p>Has conquistado todos los mundos de AGILE WORLD.</p>
+        <h2>⭐ Puntuación: <span id="finalScore"></span></h2>
+        <p>🪙 Monedas: <span id="finalCoins"></span></p>
+        <button onclick="restartGame()">VOLVER A JUGAR</button>
+    </div>
+</div>
+
+<div id="mobileControls">
+    <div class="controlGroup">
+        <button data-key="a">◀</button>
+        <button data-key="d">▶</button>
+    </div>
+    <div class="controlGroup">
+        <button data-key="w">⬆</button>
+        <button data-key="space">⤴</button>
+    </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+
+// ==================================
+// 1. CONFIGURACIÓN DEL VIDEOJUEGO
+// ==================================
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x83d9ff);
+scene.fog = new THREE.Fog(0x83d9ff, 35, 110);
+
+const camera = new THREE.PerspectiveCamera(
+    65, window.innerWidth / window.innerHeight, 0.1, 200
+);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x5987a8, 2));
+
+const sunlight = new THREE.DirectionalLight(0xffffff, 2.5);
+sunlight.position.set(-10, 20, 10);
+sunlight.castShadow = true;
+scene.add(sunlight);
+
+// ==================================
+// 2. DATOS DE LOS SEIS MUNDOS
+// ==================================
+
+const worldsData = [
+{
+ name: "MUNDO 1: GESTIÓN DE PROYECTOS",
+ color: 0x38b98a,
+ questions: [
+  {
+   q: "¿Qué es la gestión de proyectos?",
+   a: ["Organizar y dirigir actividades para lograr un objetivo",
+       "Jugar videojuegos",
+       "Crear únicamente dibujos"],
+   correct: 0,
+   info: "La gestión de proyectos organiza recursos, tareas y tiempos para alcanzar un objetivo."
+  },
+  {
+   q: "¿Cuál es una etapa de un proyecto?",
+   a: ["Improvisación",
+       "Planificación",
+       "Distracción"],
+   correct: 1,
+   info: "La planificación permite establecer actividades, tiempos y recursos."
+  },
+  {
+   q: "¿Qué es un objetivo de proyecto?",
+   a: ["Una meta que se desea alcanzar",
+       "Una herramienta de diseño",
+       "Un descanso"],
+   correct: 0,
+   info: "Los objetivos indican qué se quiere conseguir con el proyecto."
+  }
+ ]
+},
+{
+ name: "MUNDO 2: METODOLOGÍAS ÁGILES",
+ color: 0x9b71dc,
+ questions: [
+  {
+   q: "¿Qué buscan las metodologías ágiles?",
+   a: ["Evitar la comunicación",
+       "Trabajar con adaptación y entregas frecuentes",
+       "Hacer todo al final"],
+   correct: 1,
+   info: "Las metodologías ágiles promueven colaboración, adaptación y entregas de valor."
+  },
+  {
+   q: "¿Qué es Scrum?",
+   a: ["Un marco de trabajo ágil",
+       "Un lenguaje de programación",
+       "Un programa de dibujo"],
+   correct: 0,
+   info: "Scrum es un marco de trabajo que organiza el desarrollo en ciclos llamados Sprints."
+  },
+  {
+   q: "¿Qué es Kanban?",
+   a: ["Una base de datos",
+       "Un método para visualizar el flujo de trabajo",
+       "Un sistema operativo"],
+   correct: 1,
+   info: "Kanban utiliza tableros y tarjetas para visualizar el estado de las tareas."
+  }
+ ]
+},
+{
+ name: "MUNDO 3: HISTORIAS DE USUARIO",
+ color: 0xe6a64b,
+ questions: [
+  {
+   q: "¿Qué es una historia de usuario?",
+   a: ["Una descripción de una necesidad desde el punto de vista del usuario",
+       "Un cuento de ficción",
+       "Una lista de videojuegos"],
+   correct: 0,
+   info: "Las historias de usuario explican quién necesita algo, qué necesita y para qué."
+  },
+  {
+   q: "¿Cuál es la estructura común de una historia de usuario?",
+   a: ["Si, entonces, porque",
+       "Como [usuario], quiero [función], para [beneficio]",
+       "Inicio, desarrollo y final"],
+   correct: 1,
+   info: "Esta estructura identifica al usuario, su necesidad y el beneficio esperado."
+  },
+  {
+   q: "¿Para qué sirven los criterios de aceptación?",
+   a: ["Para comprobar si una función cumple lo solicitado",
+       "Para decorar el tablero",
+       "Para elegir colores"],
+   correct: 0,
+   info: "Los criterios de aceptación establecen las condiciones que debe cumplir una tarea."
+  }
+ ]
+},
+{
+ name: "MUNDO 4: TRELLO",
+ color: 0x258ed0,
+ questions: [
+  {
+   q: "¿Qué es Trello?",
+   a: ["Una red social",
+       "Una herramienta para organizar proyectos con tableros y tarjetas",
+       "Un videojuego"],
+   correct: 1,
+   info: "Trello permite organizar actividades mediante tableros, listas y tarjetas."
+  },
+  {
+   q: "¿Qué representa una tarjeta en Trello?",
+   a: ["Una tarea o actividad",
+       "Una computadora",
+       "Un usuario de internet"],
+   correct: 0,
+   info: "Cada tarjeta puede representar una tarea, con descripción, responsables y fechas."
+  },
+  {
+   q: "¿Qué indican las listas de Trello?",
+   a: ["Los colores del proyecto",
+       "Los estados o etapas de las tareas",
+       "Las contraseñas"],
+   correct: 1,
+   info: "Las listas pueden organizarse como Pendiente, En proceso y Completado."
+  }
+ ]
+},
+{
+ name: "MUNDO 5: JIRA",
+ color: 0xe17b45,
+ questions: [
+  {
+   q: "¿Para qué se utiliza Jira?",
+   a: ["Para gestionar y dar seguimiento a proyectos y tareas",
+       "Para editar fotografías",
+       "Para escuchar música"],
+   correct: 0,
+   info: "Jira permite planificar, asignar y dar seguimiento al trabajo de un equipo."
+  },
+  {
+   q: "¿Qué es un Backlog?",
+   a: ["Una lista priorizada de tareas o trabajos pendientes",
+       "Una pantalla de inicio",
+       "Una reunión final"],
+   correct: 0,
+   info: "El backlog reúne el trabajo que puede realizarse en el proyecto."
+  },
+  {
+   q: "¿Qué permite un tablero de Jira?",
+   a: ["Ver y controlar el avance de las tareas",
+       "Cambiar el sistema operativo",
+       "Crear redes sociales"],
+   correct: 0,
+   info: "Los tableros permiten visualizar el estado del trabajo."
+  }
+ ]
+},
+{
+ name: "MUNDO 6: GITHUB Y SPRINTS",
+ color: 0x66788e,
+ questions: [
+  {
+   q: "¿Qué es GitHub?",
+   a: ["Una plataforma para alojar y colaborar en proyectos de código",
+       "Una aplicación de fotografías",
+       "Un buscador de videos"],
+   correct: 0,
+   info: "GitHub facilita el trabajo colaborativo y el control de versiones de proyectos."
+  },
+  {
+   q: "¿Qué es un Sprint?",
+   a: ["Una carrera deportiva",
+       "Un periodo corto de trabajo con un objetivo definido",
+       "Una tarjeta de Trello"],
+   correct: 1,
+   info: "En Scrum, un Sprint es un ciclo de trabajo de duración fija."
+  },
+  {
+   q: "¿Qué es un repositorio en GitHub?",
+   a: ["Un lugar donde se almacena y organiza un proyecto",
+       "Un tipo de computadora",
+       "Una reunión de equipo"],
+   correct: 0,
+   info: "Un repositorio contiene archivos y el historial de cambios del proyecto."
+  }
+ ]
+}
+];
+
+// ==================================
+// 3. ELEMENTOS 3D
+// ==================================
+
+const platforms = [];
+const coins = [];
+const obstacles = [];
+const checkpoints = [];
+
+function makePlatform(x, z, width, depth, color) {
+    const geometry = new THREE.BoxGeometry(width, 1, depth);
+    const material = new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.8
+    });
+
+    const platform = new THREE.Mesh(geometry, material);
+    platform.position.set(x, -0.5, z);
+    platform.receiveShadow = true;
+    platform.castShadow = true;
+    scene.add(platform);
+
+    platforms.push({
+        mesh: platform,
+        x, z,
+        width, depth,
+        top: 0
+    });
+
+    // Parte inferior de la isla
+    const bottom = new THREE.Mesh(
+        new THREE.ConeGeometry(width * 0.48, 3, 4),
+        new THREE.MeshStandardMaterial({ color: 0x638b76 })
+    );
+    bottom.position.set(x, -2.4, z);
+    bottom.rotation.y = Math.PI / 4;
+    scene.add(bottom);
+
+    return platform;
+}
+
+function makeCloud(x, y, z, scale = 1) {
+    const group = new THREE.Group();
+
+    for (let i = 0; i < 4; i++) {
+        const cloud = new THREE.Mesh(
+            new THREE.SphereGeometry(1, 12, 10),
+            new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+
+        cloud.position.set(i * 0.9, i % 2 * 0.3, 0);
+        cloud.scale.set(1.1, 0.65, 0.8);
+        group.add(cloud);
+    }
+
+    group.position.set(x, y, z);
+    group.scale.setScalar(scale);
+    scene.add(group);
+}
+
+function makeCoin(x, z) {
+    const coin = new THREE.Mesh(
+        new THREE.TorusGeometry(0.38, 0.12, 8, 16),
+        new THREE.MeshStandardMaterial({
+            color: 0xffd52e,
+            metalness: 0.65,
+            roughness: 0.25
+        })
+    );
+
+    coin.position.set(x, 1.2, z);
+    coin.castShadow = true;
+    scene.add(coin);
+    coins.push({ mesh: coin, collected: false });
+}
+
+function makeObstacle(x, z) {
+    const obstacle = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 1.3, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0xff4d5e })
+    );
+
+    obstacle.position.set(x, 0.65, z);
+    obstacle.castShadow = true;
+    scene.add(obstacle);
+    obstacles.push(obstacle);
+}
+
+function makePortal(x, z, worldIndex) {
+    const portal = new THREE.Group();
+
+    const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1.4, 0.18, 12, 32),
+        new THREE.MeshStandardMaterial({
+            color: 0x7df5ff,
+            emissive: 0x139dc9,
+            emissiveIntensity: 1.2
+        })
+    );
+
+    ring.position.y = 2;
+    portal.add(ring);
+
+    const center = new THREE.Mesh(
+        new THREE.CircleGeometry(1.25, 32),
+        new THREE.MeshBasicMaterial({
+            color: 0x75dfff,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        })
+    );
+
+    center.position.set(0, 2, 0);
+    portal.add(center);
+
+    portal.position.set(x, 0, z);
+    scene.add(portal);
+
+    checkpoints.push({
+        mesh: portal,
+        worldIndex,
+        z
+    });
+}
+
+// ==================================
+// 4. CREACIÓN DE LOS MUNDOS
+// ==================================
+
+function buildWorld() {
+    makePlatform(0, 5, 12, 13, 0x54bd85);
+
+    for (let i = 0; i < 6; i++) {
+        const baseZ = -9 - i * 30;
+        const color = worldsData[i].color;
+
+        const positions = [
+            {x: 0, z: baseZ, w: 9},
+            {x: 2, z: baseZ - 9, w: 7},
+            {x: -1, z: baseZ - 18, w: 8},
+            {x: 0, z: baseZ - 27, w: 12}
+        ];
+
+        positions.forEach((p, j) => {
+            makePlatform(p.x, p.z, p.w, 8, color);
+
+            makeCoin(p.x - 1, p.z);
+
+            if (j === 1 || j === 2) {
+                makeObstacle(p.x + 1.8, p.z);
+            }
+        });
+
+        makePortal(0, baseZ - 27, i);
+
+        // Decoración de cada mundo
+        for (let j = 0; j < 4; j++) {
+            makeCloud(
+                (Math.random() - 0.5) * 25,
+                3 + Math.random() * 5,
+                baseZ - j * 7,
+                0.8 + Math.random() * 0.8
+            );
+        }
+    }
+
+    // Fondo de nubes
+    for (let i = 0; i < 40; i++) {
+        makeCloud(
+            (Math.random() - 0.5) * 70,
+            -2 + Math.random() * 14,
+            15 - Math.random() * 190,
+            0.6 + Math.random()
+        );
+    }
+}
+
+buildWorld();
+
+// ==================================
+// 5. PERSONAJE
+// ==================================
+
+const player = new THREE.Group();
+
+const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.42, 0.7, 5, 12),
+    new THREE.MeshStandardMaterial({ color: 0xffa044 })
+);
+body.position.y = 0.95;
+body.castShadow = true;
+player.add(body);
+
+const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.37, 20, 16),
+    new THREE.MeshStandardMaterial({ color: 0xffd0a1 })
+);
+head.position.y = 1.75;
+head.castShadow = true;
+player.add(head);
+
+const eyeMaterial = new THREE.MeshStandardMaterial({ color: 0x18314d });
+
+for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 10, 10),
+        eyeMaterial
+    );
+    eye.position.set(side * 0.14, 1.8, -0.32);
+    player.add(eye);
+}
+
+const backpack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.55, 0.25),
+    new THREE.MeshStandardMaterial({ color: 0x2979bd })
+);
+backpack.position.set(0, 1, 0.43);
+player.add(backpack);
+
+scene.add(player);
+
+let velocityY = 0;
+let grounded = false;
+let previousY = 0;
+
+// ==================================
+// 6. VARIABLES DEL JUEGO
+// ==================================
+
+let score = 0;
+let coinCount = 0;
+let lives = 3;
+let currentWorld = 0;
+let quizIndex = 0;
+let gameActive = false;
+let quizActive = false;
+let completedWorlds = [];
+let keys = {};
+
+const gravity = 0.025;
+const jumpPower = 0.48;
+const speed = 0.17;
+
+const scoreElement = document.getElementById("score");
+const coinsElement = document.getElementById("coins");
+const livesElement = document.getElementById("lives");
+const worldsElement = document.getElementById("worlds");
+const worldNameElement = document.getElementById("worldName");
+
+// ==================================
+// 7. CONTROLES
+// ==================================
+
+document.addEventListener("keydown", e => {
+    const key = e.key.toLowerCase();
+
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
+        e.preventDefault();
+    }
+
+    keys[key] = true;
+
+    if (key === " " && grounded && gameActive && !quizActive) {
+        velocityY = jumpPower;
+        grounded = false;
+    }
+});
+
+document.addEventListener("keyup", e => {
+    keys[e.key.toLowerCase()] = false;
+});
+
+document.querySelectorAll("[data-key]").forEach(button => {
+    const key = button.dataset.key;
+
+    button.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        keys[key] = true;
+
+        if (key === "space" && grounded && gameActive && !quizActive) {
+            velocityY = jumpPower;
+            grounded = false;
+        }
+    });
+
+    ["pointerup", "pointerleave", "pointercancel"].forEach(event => {
+        button.addEventListener(event, () => keys[key] = false);
+    });
+});
+
+// ==================================
+// 8. MOVIMIENTO Y COLISIONES
+// ==================================
+
+function movePlayer() {
+    if (!gameActive || quizActive) return;
+
+    let dx = 0;
+    let dz = 0;
+
+    if (keys["a"] || keys["arrowleft"]) dx -= speed;
+    if (keys["d"] || keys["arrowright"]) dx += speed;
+    if (keys["w"] || keys["arrowup"]) dz -= speed;
+    if (keys["s"] || keys["arrowdown"]) dz += speed;
+
+    const oldX = player.position.x;
+    const oldZ = player.position.z;
+
+    player.position.x += dx;
+    player.position.z += dz;
+
+    player.position.x = THREE.MathUtils.clamp(player.position.x, -5, 5);
+
+    previousY = player.position.y;
+    velocityY -= gravity;
+    player.position.y += velocityY;
+
+    grounded = false;
+
+    platforms.forEach(p => {
+        const withinX =
+            Math.abs(player.position.x - p.x) < p.width / 2 - 0.35;
+
+        const withinZ =
+            Math.abs(player.position.z - p.z) < p.depth / 2 - 0.35;
+
+        if (
+            withinX &&
+            withinZ &&
+            velocityY <= 0 &&
+            previousY >= p.top &&
+            player.position.y <= p.top
+        ) {
+            player.position.y = p.top;
+            velocityY = 0;
+            grounded = true;
+        }
+    });
+
+    // Obstáculos
+    obstacles.forEach(o => {
+        if (
+            Math.abs(player.position.x - o.position.x) < 0.75 &&
+            Math.abs(player.position.z - o.position.z) < 0.75 &&
+            player.position.y < 1.5
+        ) {
+            player.position.x = oldX;
+            player.position.z = oldZ;
+            loseLife();
+        }
+    });
+
+    // Recoger monedas
+    coins.forEach(c => {
+        if (
+            !c.collected &&
+            player.position.distanceTo(c.mesh.position) < 1.5
+        ) {
+            c.collected = true;
+            c.mesh.visible = false;
+            coinCount++;
+            score += 20;
+            updateHUD();
+        }
+    });
+
+    // Caída
+    if (player.position.y < -12) {
+        loseLife();
+    }
+
+    // Comprobar portales
+    checkpoints.forEach(c => {
+        if (
+            c.worldIndex === currentWorld &&
+            !completedWorlds.includes(c.worldIndex) &&
+            Math.abs(player.position.z - c.z) < 1.8 &&
+            Math.abs(player.position.x - c.mesh.position.x) < 3
+        ) {
+            openQuiz();
+        }
+    });
+}
+
+function loseLife() {
+    if (!gameActive || quizActive) return;
+
+    lives--;
+    updateHUD();
+
+    if (lives <= 0) {
+        gameActive = false;
+        document.getElementById("menu").classList.remove("hidden");
+        document.querySelector("#menu h2").textContent = "¡FIN DEL JUEGO!";
+        document.querySelector("#menu p").textContent =
+            "Te has quedado sin vidas. Tu puntuación fue: " + score;
+        return;
+    }
+
+    // Regresar al inicio del mundo actual
+    const checkpointZ = currentWorld === 0 ? 5 : -9 - (currentWorld - 1) * 30 - 27;
+
+    player.position.set(0, 0.2, checkpointZ);
+    velocityY = 0;
+}
+
+// ==================================
+// 9. SISTEMA DE PREGUNTAS
+// ==================================
+
+function openQuiz() {
+    quizActive = true;
+    quizIndex = 0;
+
+    document.getElementById("quiz").classList.remove("hidden");
+    document.getElementById("quizWorld").textContent =
+        worldsData[currentWorld].name;
+
+    showQuestion();
+}
+
+function showQuestion() {
+    const data = worldsData[currentWorld].questions[quizIndex];
+
+    document.getElementById("questionNumber").textContent =
+        "Pregunta " + (quizIndex + 1) + " de 3";
+
+    document.getElementById("question").textContent = data.q;
+
+    document.getElementById("progressBar").style.width =
+        ((quizIndex + 1) / 3 * 100) + "%";
+
+    document.getElementById("feedback").textContent = "";
+    document.getElementById("nextQuestion").classList.add("hidden");
+
+    const answers = document.getElementById("answers");
+    answers.innerHTML = "";
+
+    data.a.forEach((answer, index) => {
+        const button = document.createElement("button");
+        button.className = "answer";
+        button.textContent = answer;
+
+        button.addEventListener("click", () => checkAnswer(index));
+
+        answers.appendChild(button);
+    });
+}
+
+function checkAnswer(index) {
+    const data = worldsData[currentWorld].questions[quizIndex];
+    const buttons = document.querySelectorAll(".answer");
+    const feedback = document.getElementById("feedback");
+
+    buttons.forEach(button => button.disabled = true);
+
+    if (index === data.correct) {
+        feedback.textContent = "¡CORRECTO! ⭐ " + data.info;
+        feedback.style.color = "#6effc1";
+        score += 100;
+    } else {
+        feedback.textContent =
+            "¡INTÉNTALO DE NUEVO EN TU PRÓXIMA AVENTURA! " + data.info;
+        feedback.style.color = "#ffd17b";
+    }
+
+    buttons.forEach((button, i) => {
+        if (i === data.correct) {
+            button.style.background = "#8cf5bc";
+        } else if (i === index) {
+            button.style.background = "#ffaaaa";
+        }
+    });
+
+    updateHUD();
+    document.getElementById("nextQuestion").classList.remove("hidden");
+}
+
+function nextQuiz() {
+    const buttons = document.querySelectorAll(".answer");
+    const data = worldsData[currentWorld].questions[quizIndex];
+
+    // Respuesta incorrecta: repetir la misma pregunta
+    if (document.getElementById("feedback").textContent.startsWith("¡INTÉNTALO")) {
+        showQuestion();
+        return;
+    }
+
+    quizIndex++;
+
+    if (quizIndex < 3) {
+        showQuestion();
+    } else {
+        completedWorlds.push(currentWorld);
+        currentWorld++;
+
+        document.getElementById("quiz").classList.add("hidden");
+        quizActive = false;
+
+        updateHUD();
+
+        if (currentWorld >= worldsData.length) {
+            finishGame();
+        } else {
+            worldNameElement.textContent = worldsData[currentWorld].name;
+
+            const nextStartZ = -9 - (currentWorld - 1) * 30 - 27 - 9;
+            player.position.set(0, 0.2, nextStartZ);
+            velocityY = 0;
+        }
+    }
+}
+
+// ==================================
+// 10. INTERFAZ Y PROGRESO
+// ==================================
+
+function updateHUD() {
+    scoreElement.textContent = score;
+    coinsElement.textContent = coinCount;
+    livesElement.textContent = lives;
+    worldsElement.textContent = completedWorlds.length + "/6";
+}
+
+function finishGame() {
+    gameActive = false;
+
+    document.getElementById("finalScore").textContent = score;
+    document.getElementById("finalCoins").textContent = coinCount;
+
+    document.getElementById("victory").classList.remove("hidden");
+}
+
+window.startGame = function() {
+    document.getElementById("menu").classList.add("hidden");
+    gameActive = true;
+    worldNameElement.textContent = worldsData[0].name;
+};
+
+window.showInstructions = function() {
+    document.getElementById("instructions").classList.remove("hidden");
+};
+
+window.hideInstructions = function() {
+    document.getElementById("instructions").classList.add("hidden");
+};
+
+window.nextQuiz = nextQuiz;
+
+window.restartGame = function() {
+    location.reload();
+};
+
+// ==================================
+// 11. CÁMARA 3D Y ANIMACIÓN
+// ==================================
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = performance.now() * 0.001;
+
+    // Animación de monedas y portales
+    coins.forEach(c => {
+        if (!c.collected) {
+            c.mesh.rotation.y += 0.04;
+            c.mesh.position.y = 1.2 + Math.sin(time * 2 + c.mesh.position.z) * 0.15;
+        }
+    });
+
+    checkpoints.forEach(c => {
+        c.mesh.rotation.y = Math.sin(time) * 0.15;
+    });
+
+    obstacles.forEach(o => {
+        o.rotation.y += 0.01;
+    });
+
+    movePlayer();
+
+    // Cámara que sigue al personaje
+    const cameraTarget = new THREE.Vector3(
+        player.position.x * 0.5,
+        player.position.y + 5,
+        player.position.z + 10
+    );
+
+    camera.position.lerp(cameraTarget, 0.08);
+
+    const lookTarget = new THREE.Vector3(
+        player.position.x,
+        player.position.y + 1,
+        player.position.z - 5
+    );
+
+    camera.lookAt(lookTarget);
+
+    // Movimiento del personaje
+    if (gameActive && !quizActive) {
+        body.rotation.z = Math.sin(time * 10) * 0.05;
+    }
+
+    renderer.render(scene, camera);
+}
+
+animate();
+
+// ==================================
+// 12. AJUSTE DE PANTALLA
+// ==================================
+
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>
